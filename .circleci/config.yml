@@ -1,0 +1,52 @@
+version: 2.1
+
+workflows:
+  deploy:
+    jobs:
+      - build:
+          name: build-dev
+          environment: dev
+      - deploy:
+          name: deploy-dev
+          environment: dev
+          requires:
+            - build-dev
+      - hold:
+          name: wait-between-dev-and-prod
+          type: approval
+          requires:
+            - deploy-dev
+      - build:
+          name: build-prod
+          environment: prod
+          requires:
+            - wait-between-dev-and-prod
+      - deploy:
+          name: deploy-prod
+          environment: prod
+          requires:
+            - build-prod
+
+jobs:
+  build:
+    parameters:
+      environment:
+        type: enum
+        enum: ["dev", "prod"]
+    docker:
+      - image: cimg/base:2023.03
+    steps:
+      - checkout
+      - run: echo "Building image for << parameters.environment >>"
+
+  deploy:
+    parameters:
+      environment:
+        type: enum
+        enum: ["dev", "prod"]
+    docker:
+      - image: cimg/base:2023.03
+    steps:
+      - checkout
+      - run: echo "Deploying to << parameters.environment >>"
+
